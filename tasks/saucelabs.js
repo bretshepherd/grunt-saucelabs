@@ -227,15 +227,21 @@ module.exports = function(grunt) {
             var el = els[0];
             var retryCount = 0;
 
-            var fetchResults = function(cb, status,retries) {
-			  retries = typeof retries !== 'undefined' ? retries +1 : 0;
-			  if (retries>3)
-				return;
-              driver.safeEval("jasmine.getJSReport ? jasmine.getJSReport() : null;", function(err, obj) {
-				if(obj==null){
-					fetchResults(cb,status,retries);
-					return;
-				}
+            var fetchResults = function (cb, status)
+            {
+                var fn="var result; \
+                    function checkVariable() { \
+                    if ((jasmine.getJSReport ? jasmine.getJSReport() : null) != null) \
+                    { \
+                        result=jasmine.getJSReport(); \
+                    } \
+                    else { \
+                        window.setTimeout('checkVariable();', 60000); \
+                    } \
+                }; \
+                checkVariable();\
+                result";
+              driver.safeEval(fn, function(err, obj) {
                 cb(status, obj);
               });
             };
